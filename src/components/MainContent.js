@@ -4314,7 +4314,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
     setEditandoViaje(viaje.id);
     setTiempoEdit(viaje.tiempo || '');
     setUnidadEdit(viaje.numeroUnidad || '');
-    setBaseEdit(viaje.base || '');
+    setBaseEdit(viaje.base || '01'); // Base por defecto 01 si no existe
   };
 
    // Función para cancelar edición
@@ -4328,8 +4328,9 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
    // Función para mover pedido de disponibles a en curso
    // Incluye el token del conductor para notificaciones push cuando se asigna manualmente
    const guardarEdicionViaje = async (viajeId) => {
-     if (!baseEdit.trim() || !tiempoEdit.trim() || !unidadEdit.trim()) {
-       setModal({ open: true, success: false, message: 'Por favor, ingrese base, tiempo y número de unidad.' });
+     // Validar solo tiempo y unidad (base ya no es requerida)
+     if (!tiempoEdit.trim() || !unidadEdit.trim()) {
+       setModal({ open: true, success: false, message: 'Por favor, ingrese tiempo y número de unidad.' });
        return;
      }
 
@@ -4386,7 +4387,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
        const pedidoEnCursoData = {
          ...pedidoOriginal,
          // Datos de asignación
-         base: convertirNumeroABase(baseEdit),
+         base: convertirNumeroABase(baseEdit || '01'), // Base por defecto 01 si está vacío
          tiempo: tiempoEdit,
          numeroUnidad: unidadEdit,
          unidad: unidadEdit,
@@ -6870,8 +6871,12 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                               if (e.key === 'Enter') {
                                 e.preventDefault();
                                 e.stopPropagation(); // Prevenir propagación del evento
-                                if (baseEdit.trim() && tiempoEdit.trim() && unidadEdit.trim()) {
+                                // Solo validar tiempo y unidad (base ya no es requerida)
+                                if (tiempoEdit.trim() && unidadEdit.trim()) {
+                                  console.log('🚀 Enter en unidad (tabla): Guardando edición con tiempo:', tiempoEdit, 'unidad:', unidadEdit);
                                   guardarEdicionViaje(viaje.id);
+                                } else {
+                                  console.log('⚠️ Faltan campos - tiempo:', tiempoEdit, 'unidad:', unidadEdit);
                                 }
                               }
                             }}
