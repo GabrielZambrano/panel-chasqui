@@ -36,7 +36,7 @@ function Sidebar({ activeSection, setActiveSection, isCollapsed, setIsCollapsed,
             fontWeight: 'bold',
             color: '#f9fafb'
           }}>
-            Taxi Turismo
+            Chasqui Express
           </h2>
         )}
         <button

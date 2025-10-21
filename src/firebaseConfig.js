@@ -4,16 +4,13 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCNbzp8lDOdJpUWFBpjC-2bHYLemBj8cos",
-  authDomain: "appecdriver.firebaseapp.com",
-  databaseURL: "https://appecdriver-default-rtdb.firebaseio.com",
-  projectId: "appecdriver",
-  storageBucket: "appecdriver.appspot.com",
-  messagingSenderId: "967992971623",
-  appId: "1:967992971623:web:51dc3ba017676acdb0dfc2",
-  measurementId: "G-PYJ7J08014"
+  apiKey: "AIzaSyA8nlePJY4wLrKKPMQNi0wt8ib3PhFMWNU",
+  authDomain: "chasquiapp-280e3.firebaseapp.com",
+  projectId: "chasquiapp-280e3",
+  storageBucket: "chasquiapp-280e3.firebasestorage.app",
+  messagingSenderId: "1059605808609",
+  appId: "1:1059605808609:web:6706a02aaebd8f54623ea0"
 };
-
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
