@@ -569,7 +569,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
   const [coordenadas, setCoordenadas] = useState('');
   const [direccion, setDireccion] = useState('');
   const [sector, setSector] = useState('');
-  const [base, setBase] = useState('');
+  const [base, setBase] = useState('01'); // Base por defecto automática
   const [busquedaPorIdCliente, setBusquedaPorIdCliente] = useState(false);
   const [telefonoCompletoCliente, setTelefonoCompletoCliente] = useState('');
   const [tiempo, setTiempo] = useState('');
@@ -1574,11 +1574,11 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
           // Cargar direcciones del cliente para el selector
           await cargarDireccionesCliente(telefono);
           
-          // Enfocar el input de base después de encontrar el cliente
+          // Enfocar el input de tiempo después de encontrar el cliente (ya no base)
           setTimeout(() => {
-            if (baseInputRef.current) {
-              baseInputRef.current.focus();
-              console.log('🎯 Enfoque automático en input de base');
+            if (tiempoInputRef.current) {
+              tiempoInputRef.current.focus();
+              console.log('🎯 Enfoque automático en input de tiempo');
             }
           }, 100);
         } else {
@@ -1676,11 +1676,11 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
           // Cargar direcciones del cliente para el selector
           await cargarDireccionesCliente(telefono);
           
-          // Enfocar el input de base después de encontrar el cliente
+          // Enfocar el input de tiempo después de encontrar el cliente (ya no base)
           setTimeout(() => {
-            if (baseInputRef.current) {
-              baseInputRef.current.focus();
-              console.log('🎯 Enfoque automático en input de base');
+            if (tiempoInputRef.current) {
+              tiempoInputRef.current.focus();
+              console.log('🎯 Enfoque automático en input de tiempo');
             }
           }, 100);
         } else {
@@ -2583,7 +2583,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
 
   // Nueva función para limpiar solo tiempo y unidad, manteniendo datos del cliente
   const limpiarTiempoYUnidad = () => {
-    setBase(''); // Dejar base vacío para texto libre
+    setBase('01'); // Establecer base por defecto automáticamente
     setTiempo('');
     setUnidad('');
     setMapaVisible(false); // Oculta el mapa
@@ -2595,7 +2595,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
     setNombre('');
     setCoordenadas('');
     setDireccion('');
-    setBase(''); // Dejar base vacío para texto libre
+    setBase('01'); // Establecer base por defecto automáticamente
     setTiempo('');
     setUnidad('');
     setUsuarioEncontrado(null);
