@@ -2889,7 +2889,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
          telefono: busquedaPorIdCliente ? telefono : (telefonoCompleto || telefono || ''), // Usar código original si se buscó por ID
          telefonoCompleto: busquedaPorIdCliente ? telefonoCompletoCliente : telefonoCompleto, // Usar teléfono completo del cliente si se buscó por ID
          direccion: direccion || '',
-         base: convertirNumeroABase(base || '0'), // Nuevo campo base
+         base: convertirNumeroABase(base || '1'), // Nuevo campo base
          destino: '', // Destino por defecto
          fecha: fecha,
          estado: 'Aceptado',
@@ -5775,13 +5775,17 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                         tiempoInputRef.current.focus();
                       }
                     }
-                    // Enter para ejecutar acción
+                    // Enter para ejecutar acción - SIEMPRE permite enviar sin requerir base
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       e.stopPropagation(); // Prevenir que el evento llegue al formulario
+                      // Si hay tiempo Y unidad, insertar viaje en curso
                       if (tiempo.trim() && unidad.trim()) {
+                        console.log('🚀 Enter en unidad: Insertando viaje en curso (con tiempo y unidad)');
                         handleInsertarViaje();
                       } else {
+                        // Si NO hay tiempo o unidad, insertar como pedido disponible
+                        console.log('🚀 Enter en unidad: Insertando pedido disponible (sin tiempo/unidad)');
                         handleInsertarViajePendiente();
                       }
                     }
