@@ -1515,13 +1515,9 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
           const telefonoCompletoDelCliente = clienteData.telefonoCompleto || clienteData.telefono;
           setTelefonoCompletoCliente(telefonoCompletoDelCliente);
           
-          // Reemplazar el código IDC en el input con el teléfono completo incluyendo el cero
-          let telefonoConCero = clienteData.telefono;
-          if (telefonoConCero && !telefonoConCero.startsWith('0')) {
-            telefonoConCero = '0' + telefonoConCero;
-          }
-          setTelefono(telefonoConCero);
-          console.log('🔄 Código IDC reemplazado en input:', telefono, '→', telefonoConCero);
+          // Reemplazar el código IDC en el input con el telefonoCompleto (593...)
+          setTelefono(telefonoCompletoDelCliente);
+          console.log('🔄 Código IDC reemplazado en input:', telefono, '→', telefonoCompletoDelCliente);
           console.log('📱 Teléfono completo del cliente:', telefonoCompletoDelCliente);
           
           if (clienteData.nombre) {
