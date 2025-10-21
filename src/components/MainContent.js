@@ -5691,6 +5691,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
             </button>
           )}
           
+               {/* Input de base oculto - valor por defecto automático: 01 */}
                <input
                  ref={baseInputRef}
                  type="text"
@@ -5698,52 +5699,11 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                  value={base}
                  onChange={(e) => {
                    const valor = e.target.value;
-                   console.log('🔍 Campo Base - Valor:', valor, 'Longitud:', valor.length);
-                   
-                   // Permitir números del 01-13 con formato de dos dígitos
-                   // Validar que esté vacío, sea un solo dígito del 0-9, o sea 01-13 con dos dígitos
-                   if (valor === '' || 
-                       valor === '01' || valor === '02' || valor === '03' || valor === '04' || valor === '05' || 
-                       valor === '06' || valor === '07' || valor === '08' || valor === '09' || 
-                       valor === '10' || valor === '11' || valor === '12' || valor === '13' ||
-                       // Permitir escritura progresiva (0, 1, 2, etc.)
-                       valor === '0' || valor === '1' || valor === '2' || valor === '3' || valor === '4' || 
-                       valor === '5' || valor === '6' || valor === '7' || valor === '8' || valor === '9') {
-                     setBase(valor);
-                     
-                     // Si se completan 2 dígitos, saltar al campo tiempo
-                     if (valor.length === 2) {
-                       console.log('🚀 Base: Saltando al campo tiempo en 50ms');
-                       setTimeout(() => {
-                         if (tiempoInputRef.current) {
-                           tiempoInputRef.current.focus();
-                           console.log('✅ Base: Enfocado campo tiempo');
-                         } else {
-                           console.log('❌ Base: tiempoInputRef.current es null');
-                         }
-                       }, 50);
-                     }
-                   } else {
-                     console.log('❌ Base: Valor no válido (solo números del 1-13):', valor);
-                   }
-                 }}
-                 onKeyDown={(e) => {
-                   // Navegación con flechas del teclado
-                   if (e.key === 'ArrowRight' || e.key === 'Tab') {
-                     e.preventDefault();
-                     if (tiempoInputRef.current) {
-                       tiempoInputRef.current.focus();
-                     }
-                   }
+                   setBase(valor);
                  }}
                  maxLength="2"
                  style={{
-                   padding: '12px 16px',
-                   border: '2px solid #666',
-                   borderRadius: 4,
-                   fontSize: '18px',
-                   fontWeight: 'bold',
-                   width: 100
+                   display: 'none' // Oculto - no requerido
                  }}
                />
                <input
@@ -6472,15 +6432,8 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                    }}>
                      📍 Dirección
                    </th>
-                   <th style={{
-                     padding: '12px 4px',
-                     textAlign: 'center',
-                     fontWeight: 'bold',
-                     color: '#374151',
-                     borderBottom: '2px solid #e5e7eb',
-                     whiteSpace: 'nowrap',
-                     width: '80px'
-                   }}>
+                   {/* Columna Base oculta */}
+                   <th style={{ display: 'none' }}>
                      🏢 Base
                    </th>
                    <th style={{
@@ -6827,37 +6780,22 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                          );
                        })()}
                      </td>
-                     <td style={{
-                       padding: '12px 4px',
-                       textAlign: 'center',
-                       fontWeight: 'bold',
-                       color: '#7c3aed',
-                       width: '80px'
-                     }}>
-                       <input
-                         type="text"
-                         value={editandoViaje === viaje.id ? baseEdit : (viaje.base || '')}
-                         onChange={(e) => {
-                           const valor = e.target.value;
-                           // Permitir cualquier texto para base (sin restricciones)
-                           if (editandoViaje !== viaje.id) {
-                             iniciarEdicionViaje(viaje);
-                           }
-                           setBaseEdit(valor);
-                         }}
-                         style={{
-                           width: '60px',
-                           padding: '4px 6px',
-                           border: '1px solid #ccc',
-                           borderRadius: 4,
-                           textAlign: 'center',
-                           fontSize: 12,
-                           fontWeight: 'bold',
-                           backgroundColor: 'white'
-                         }}
-                         placeholder="Base"
-                       />
-                     </td>
+                    {/* Columna Base oculta */}
+                    <td style={{ display: 'none' }}>
+                      <input
+                        type="text"
+                        value={editandoViaje === viaje.id ? baseEdit : (viaje.base || '')}
+                        onChange={(e) => {
+                          const valor = e.target.value;
+                          if (editandoViaje !== viaje.id) {
+                            iniciarEdicionViaje(viaje);
+                          }
+                          setBaseEdit(valor);
+                        }}
+                        style={{ display: 'none' }}
+                        placeholder="Base"
+                      />
+                    </td>
                      <td style={{
                        padding: '12px 4px',
                        textAlign: 'center',
@@ -7154,14 +7092,8 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                   }}>
                     🚕 Unidad
                   </th>
-                  <th style={{
-                    padding: '12px 16px',
-                    textAlign: 'center',
-                    fontWeight: 'bold',
-                    color: '#374151',
-                    borderBottom: '2px solid #e5e7eb',
-                    whiteSpace: 'nowrap'
-                  }}>
+                  {/* Columna Base oculta */}
+                  <th style={{ display: 'none' }}>
                     🏢 Base
                   </th>
                   <th style={{
@@ -7240,12 +7172,8 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                     }}>
                       {pedido.unidad || pedido.numeroUnidad || '-'}
                     </td>
-                    <td style={{
-                      padding: '12px 16px',
-                      textAlign: 'center',
-                      fontWeight: 'bold',
-                      color: '#7c3aed'
-                    }}>
+                    {/* Columna Base oculta */}
+                    <td style={{ display: 'none' }}>
                       {pedido.base || '-'}
                     </td>
                     <td style={{
