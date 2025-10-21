@@ -6394,6 +6394,17 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                              <thead>
                  <tr style={{ background: '#f8fafc' }}>
                    <th style={{
+                     padding: '12px 6px',
+                     textAlign: 'center',
+                     fontWeight: 'bold',
+                     color: '#374151',
+                     borderBottom: '2px solid #e5e7eb',
+                     whiteSpace: 'nowrap',
+                     width: '80px'
+                   }}>
+                     🕐 Hora
+                   </th>
+                   <th style={{
                      padding: '12px 8px',
                      textAlign: 'left',
                      fontWeight: 'bold',
@@ -6527,6 +6538,21 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                         e.currentTarget.style.background = colorFondoBase;
                       }}
                     >
+                     {/* Columna de Hora */}
+                     <td style={{
+                       padding: '12px 6px',
+                       textAlign: 'center',
+                       fontWeight: 'bold',
+                       color: '#059669',
+                       width: '80px',
+                       fontSize: '13px'
+                     }}>
+                       {viaje.fecha ? (
+                         typeof viaje.fecha === 'string' 
+                           ? viaje.fecha.split(',')[1]?.trim().split(':')[0] + ':' + viaje.fecha.split(',')[1]?.trim().split(':')[1] + ' ' + viaje.fecha.split(' ').pop()
+                           : new Date(viaje.fecha).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                       ) : '-'}
+                     </td>
                      <td style={{
                        padding: '12px 8px',
                        fontWeight: 'bold',
@@ -7052,6 +7078,17 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
                   <th style={{
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    color: '#374151',
+                    borderBottom: '2px solid #e5e7eb',
+                    whiteSpace: 'nowrap',
+                    width: '80px'
+                  }}>
+                    🕐 Hora
+                  </th>
+                  <th style={{
                     padding: '12px 16px',
                     textAlign: 'left',
                     fontWeight: 'bold',
@@ -7142,6 +7179,23 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                           : (index % 2 === 0 ? '#fff' : '#fafbff');
                       }}
                     >
+                    {/* Columna de Hora */}
+                    <td style={{
+                      padding: '12px 8px',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      color: '#dc2626',
+                      width: '80px',
+                      fontSize: '13px'
+                    }}>
+                      {pedido.fecha ? (
+                        typeof pedido.fecha === 'string' 
+                          ? pedido.fecha.split(',')[1]?.trim().split(':')[0] + ':' + pedido.fecha.split(',')[1]?.trim().split(':')[1] + ' ' + pedido.fecha.split(' ').pop()
+                          : pedido.fecha.toDate 
+                            ? pedido.fecha.toDate().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                            : new Date(pedido.fecha).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                      ) : '-'}
+                    </td>
                     <td style={{
                       padding: '12px 16px',
                       fontWeight: 'bold',
