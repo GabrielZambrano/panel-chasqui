@@ -662,6 +662,10 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
   const [tipoEmpresa, setTipoEmpresa] = useState('Efectivo');
   const [modoSeleccionUI, setModoSeleccionUI] = useState('Manual');
   
+  // Estados para la colección bases
+  const [unidadesBases, setUnidadesBases] = useState([]);
+  const [cargandoBases, setCargandoBases] = useState(false);
+  
   // Estado para autorización pre-generada (ya no se usa, se genera en tiempo real)
   const [autorizacionPreGenerada, setAutorizacionPreGenerada] = useState('');
   
@@ -776,6 +780,11 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
   // Cargar estado inicial al montar el componente (solo para crear documento si no existe)
   useEffect(() => {
     cargarEstadoConfiguracion();
+  }, []);
+
+  // Cargar unidades de bases al inicio
+  useEffect(() => {
+    cargarUnidadesBases();
   }, []);
 
   // Guardar modoSeleccion en localStorage cuando cambie
@@ -1128,6 +1137,41 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
       console.error('❌ Error al cargar pedidos:', error);
     } finally {
       setCargandoViajes(false);
+    }
+  };
+
+  // Función para cargar unidades de la colección bases
+  const cargarUnidadesBases = async () => {
+    try {
+      setCargandoBases(true);
+      console.log('🔄 Cargando unidades de bases...');
+      
+      const basesRef = collection(db, 'bases');
+      const q = query(basesRef, orderBy('fechaHora', 'asc')); // Más antiguas primero
+      const querySnapshot = await getDocs(q);
+      
+      const unidades = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      console.log('📊 Unidades de bases cargadas:', unidades.length);
+      setUnidadesBases(unidades);
+    } catch (error) {
+      console.error('❌ Error al cargar unidades de bases:', error);
+    } finally {
+      setCargandoBases(false);
+    }
+  };
+
+  // Función para eliminar unidad de bases
+  const eliminarUnidadBase = async (unidadId) => {
+    try {
+      await deleteDoc(doc(db, 'bases', unidadId));
+      console.log('✅ Unidad eliminada de bases:', unidadId);
+      cargarUnidadesBases(); // Recargar la lista
+    } catch (error) {
+      console.error('❌ Error al eliminar unidad:', error);
     }
   };
 
@@ -6299,7 +6343,6 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
             alignItems: 'center',
             gap: 10
           }}>
-            🚗 Pedidos Disponibles
             <span style={{
               background: 'rgba(255,255,255,0.2)',
               padding: '4px 12px',
@@ -6307,55 +6350,149 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
               fontSize: 14,
               fontWeight: 'normal'
             }}>
-              {viajesAsignados.length} disponibles
+              {viajesAsignados.length}
             </span>
+            
+            <input
+              type="text"
+              placeholder="Número de Unidad"
+              style={{
+                padding: '6px 12px',
+                border: '2px solid rgba(255,255,255,0.3)',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 'bold',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                color: 'white',
+                width: '120px',
+                textAlign: 'center'
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  const numeroUnidad = e.target.value.trim();
+                  if (numeroUnidad) {
+                    try {
+                      console.log('🚗 Validando unidad:', numeroUnidad);
+                      
+                      // 1. Verificar que la unidad no esté ya en la colección bases
+                      const unidadesExistentes = unidadesBases.some(unidad => unidad.numeroUnidad === numeroUnidad);
+                      if (unidadesExistentes) {
+                        console.log('❌ La unidad ya existe en la colección bases');
+                        setModal({ open: true, success: false, message: `La unidad ${numeroUnidad} ya está registrada en la base.` });
+                        return;
+                      }
+                      
+                      // 2. Verificar que la unidad exista en la colección de conductores
+                      const conductoresRef = collection(db, 'conductores');
+                      const qConductores = query(conductoresRef, where('unidad', '==', numeroUnidad));
+                      const conductoresSnapshot = await getDocs(qConductores);
+                      
+                      if (conductoresSnapshot.empty) {
+                        console.log('❌ La unidad no existe en la colección de conductores');
+                        setModal({ open: true, success: false, message: `La unidad ${numeroUnidad} no existe en la lista de conductores.` });
+                        return;
+                      }
+                      
+                      // 3. Verificar que el conductor no esté ya registrado en bases
+                      const conductorData = conductoresSnapshot.docs[0].data();
+                      const conductorExiste = unidadesBases.some(unidad => unidad.idConductor === conductorData.id);
+                      if (conductorExiste) {
+                        console.log('❌ El conductor ya está registrado en la base');
+                        setModal({ open: true, success: false, message: `El conductor de la unidad ${numeroUnidad} ya está registrado en la base.` });
+                        return;
+                      }
+                      
+                      // Si pasa todas las validaciones, insertar la unidad
+                      console.log('✅ Validaciones pasadas, creando registro en colección bases para unidad:', numeroUnidad);
+                      await addDoc(collection(db, 'bases'), {
+                        numeroUnidad: numeroUnidad,
+                        fechaHora: new Date(),
+                        operadora: operadorAutenticado ? operadorAutenticado.nombre : 'Sin operador',
+                        estado: 'activo',
+                        idConductor: conductorData.id,
+                        nombreConductor: conductorData.nombre || conductorData.nombreConductor
+                      });
+                      
+                      console.log('✅ Unidad registrada exitosamente en colección bases');
+                      e.target.value = ''; // Limpiar el input después de insertar
+                      cargarUnidadesBases(); // Recargar la lista de unidades
+                      
+                    } catch (error) {
+                      console.error('❌ Error al registrar unidad en bases:', error);
+                      setModal({ open: true, success: false, message: 'Error al registrar la unidad. Intente nuevamente.' });
+                    }
+                  }
+                }
+              }}
+            />
           </h3>
           
           <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => {
-              console.log('🔄 Botón actualizar presionado');
-              cargarViajesAsignados();
-            }}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
-          >
-            🔄 Actualizar
-          </button>
-          
-          <button
-            onClick={() => {
-              console.log('🔄 Botón sincronizar presionado');
-              sincronizarCamposViajes();
-            }}
-            style={{
-              background: 'rgba(255,165,0,0.8)', // Color naranja para diferenciarlo
-              border: '1px solid rgba(255,165,0,0.5)',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
-          >
-            🔄 Sincronizar Viajes
-          </button>
           </div>
+        </div>
+
+        {/* Unidades de bases dentro del cuadro azul */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '15px 20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          color: 'white'
+        }}>
+          {cargandoBases ? (
+            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.8)' }}>
+              <div style={{ fontSize: 20, marginBottom: 5 }}>⏳</div>
+              <div style={{ fontSize: '14px' }}>Cargando unidades...</div>
+            </div>
+          ) : unidadesBases.length === 0 ? (
+            <div></div>
+          ) : (
+            <div style={{ 
+              display: 'flex', 
+              flexWrap: 'wrap', 
+              gap: '8px',
+              alignItems: 'center'
+            }}>
+              {unidadesBases.map((unidad, index) => (
+                <div key={unidad.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(255,255,255,0.2)',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}>
+                  <span style={{ color: '#FFD700', background: 'black', padding: '2px 6px', borderRadius: '4px' }}>
+                    {index + 1}. {unidad.numeroUnidad}
+                  </span>
+                  <button
+                    onClick={() => eliminarUnidadBase(unidad.id)}
+                    style={{
+                      background: 'rgba(239,68,68,0.8)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = 'rgba(220,38,38,0.9)'}
+                    onMouseLeave={(e) => e.target.style.background = 'rgba(239,68,68,0.8)'}
+                    title="Eliminar unidad"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {cargandoViajes ? (
@@ -13498,6 +13635,7 @@ function ViajesArchivadosContent() {
     return filtrados;
   };
 
+  // Cargar viajes archivados al inicio
   useEffect(() => {
     // Establecer fecha de hoy por defecto
     const hoy = new Date();
