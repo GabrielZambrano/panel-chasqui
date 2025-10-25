@@ -5696,7 +5696,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                  value={base}
                  onChange={(e) => {
                    const valor = e.target.value;
-                   setBase(valor);
+                     setBase(valor);
                  }}
                  maxLength="2"
                  style={{
@@ -6809,20 +6809,20 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                      </td>
                     {/* Columna Base oculta */}
                     <td style={{ display: 'none' }}>
-                      <input
-                        type="text"
-                        value={editandoViaje === viaje.id ? baseEdit : (viaje.base || '')}
-                        onChange={(e) => {
-                          const valor = e.target.value;
-                          if (editandoViaje !== viaje.id) {
-                            iniciarEdicionViaje(viaje);
-                          }
-                          setBaseEdit(valor);
-                        }}
+                       <input
+                         type="text"
+                         value={editandoViaje === viaje.id ? baseEdit : (viaje.base || '')}
+                         onChange={(e) => {
+                           const valor = e.target.value;
+                           if (editandoViaje !== viaje.id) {
+                             iniciarEdicionViaje(viaje);
+                           }
+                           setBaseEdit(valor);
+                         }}
                         style={{ display: 'none' }}
-                        placeholder="Base"
-                      />
-                    </td>
+                         placeholder="Base"
+                       />
+                     </td>
                      <td style={{
                        padding: '12px 4px',
                        textAlign: 'center',
@@ -13326,6 +13326,8 @@ function MainContent({ activeSection, operadorAutenticado, setOperadorAutenticad
         return <ReportesContent />;
       case 'operadores':
         return <OperadoresContent />;
+      case 'viajesArchivados':
+        return <ViajesArchivadosContent />;
       case 'vouchers':
         return <VouchersContent operadorAutenticado={operadorAutenticado} />;
       case 'reservas':
@@ -13355,6 +13357,337 @@ function MainContent({ activeSection, operadorAutenticado, setOperadorAutenticad
     }}>
       {renderContent()}
     </main>
+  );
+}
+
+function ViajesArchivadosContent() {
+  const [viajesArchivados, setViajesArchivados] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [filtros, setFiltros] = useState({
+    fechaInicio: '',
+    fechaFin: '',
+    operadora: '',
+    conductor: '',
+    estadoArchivado: ''
+  });
+  const [estadisticas, setEstadisticas] = useState({
+    totalViajes: 0,
+    completados: 0,
+    cancelados: 0,
+    tiempoLimite: 0,
+    promedioDuracion: 0
+  });
+
+  // Cargar viajes archivados
+  const cargarViajesArchivados = async () => {
+    setCargando(true);
+    try {
+      const q = query(collection(db, 'viajesArchivados'));
+      const snapshot = await getDocs(q);
+      const viajes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setViajesArchivados(viajes);
+      calcularEstadisticas(viajes);
+    } catch (error) {
+      console.error('Error cargando viajes archivados:', error);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // Calcular estadísticas
+  const calcularEstadisticas = (viajes) => {
+    const total = viajes.length;
+    const completados = viajes.filter(v => v.estadoArchivado === 'Completado').length;
+    const cancelados = viajes.filter(v => v.estadoArchivado === 'Cancelado').length;
+    const tiempoLimite = viajes.filter(v => v.motivoArchivado?.includes('Tiempo límite')).length;
+    const promedioDuracion = viajes.reduce((sum, v) => sum + (v.duracionViaje || 0), 0) / total;
+
+    setEstadisticas({
+      totalViajes: total,
+      completados,
+      cancelados,
+      tiempoLimite,
+      promedioDuracion: Math.round(promedioDuracion / 60) // Convertir a minutos
+    });
+  };
+
+  // Aplicar filtros
+  const aplicarFiltros = () => {
+    return viajesArchivados.filter(viaje => {
+      // Filtro de fecha mejorado
+      let cumpleFecha = true;
+      if (filtros.fechaInicio && filtros.fechaFin) {
+        const fechaInicio = new Date(filtros.fechaInicio);
+        const fechaFin = new Date(filtros.fechaFin);
+        fechaFin.setHours(23, 59, 59, 999); // Incluir todo el día
+        
+        if (viaje.fechaArchivado) {
+          let fechaViaje;
+          if (viaje.fechaArchivado.toDate) {
+            fechaViaje = viaje.fechaArchivado.toDate();
+          } else {
+            fechaViaje = new Date(viaje.fechaArchivado);
+          }
+          cumpleFecha = fechaViaje >= fechaInicio && fechaViaje <= fechaFin;
+        } else {
+          cumpleFecha = false;
+        }
+      }
+      
+      const cumpleOperadora = !filtros.operadora || 
+        viaje.operadora?.toLowerCase().includes(filtros.operadora.toLowerCase());
+      
+      const cumpleConductor = !filtros.conductor || 
+        viaje.nombreConductor?.toLowerCase().includes(filtros.conductor.toLowerCase());
+      
+      const cumpleEstado = !filtros.estadoArchivado || 
+        viaje.estadoArchivado === filtros.estadoArchivado;
+
+      return cumpleFecha && cumpleOperadora && cumpleConductor && cumpleEstado;
+    });
+  };
+
+  useEffect(() => {
+    // Establecer fecha de hoy por defecto
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    
+    setFiltros(prev => ({
+      ...prev,
+      fechaInicio: fechaHoy,
+      fechaFin: fechaHoy
+    }));
+    
+    cargarViajesArchivados();
+  }, []);
+
+  const viajesFiltrados = aplicarFiltros();
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2 style={{ marginBottom: '20px', color: '#1f2937' }}>📋 Viajes Archivados</h2>
+      
+      {/* Estadísticas */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '15px', 
+        marginBottom: '20px' 
+      }}>
+        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{estadisticas.totalViajes}</div>
+          <div style={{ color: '#6b7280' }}>Total Viajes</div>
+        </div>
+        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>{estadisticas.completados}</div>
+          <div style={{ color: '#6b7280' }}>Completados</div>
+        </div>
+        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{estadisticas.cancelados}</div>
+          <div style={{ color: '#6b7280' }}>Cancelados</div>
+        </div>
+        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>{estadisticas.tiempoLimite}</div>
+          <div style={{ color: '#6b7280' }}>Tiempo Límite</div>
+        </div>
+        <div style={{ background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6' }}>{estadisticas.promedioDuracion}min</div>
+          <div style={{ color: '#6b7280' }}>Promedio Duración</div>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div style={{ 
+        background: 'white', 
+        padding: '20px', 
+        borderRadius: '8px', 
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+        marginBottom: '20px' 
+      }}>
+        <h3 style={{ marginBottom: '15px', color: '#374151' }}>Filtros</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>Fecha Inicio</label>
+            <input
+              type="date"
+              value={filtros.fechaInicio}
+              onChange={(e) => setFiltros(prev => ({ ...prev, fechaInicio: e.target.value }))}
+              style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>Fecha Fin</label>
+            <input
+              type="date"
+              value={filtros.fechaFin}
+              onChange={(e) => setFiltros(prev => ({ ...prev, fechaFin: e.target.value }))}
+              style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>Operadora</label>
+            <input
+              type="text"
+              placeholder="Buscar operadora..."
+              value={filtros.operadora}
+              onChange={(e) => setFiltros(prev => ({ ...prev, operadora: e.target.value }))}
+              style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>Conductor</label>
+            <input
+              type="text"
+              placeholder="Buscar conductor..."
+              value={filtros.conductor}
+              onChange={(e) => setFiltros(prev => ({ ...prev, conductor: e.target.value }))}
+              style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: '500' }}>Estado</label>
+            <select
+              value={filtros.estadoArchivado}
+              onChange={(e) => setFiltros(prev => ({ ...prev, estadoArchivado: e.target.value }))}
+              style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Completado">Completado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => {
+              const hoy = new Date();
+              const fechaHoy = hoy.toISOString().split('T')[0];
+              setFiltros(prev => ({
+                ...prev,
+                fechaInicio: fechaHoy,
+                fechaFin: fechaHoy
+              }));
+            }}
+            style={{
+              padding: '8px 16px',
+              background: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            📅 Hoy
+          </button>
+          <button
+            onClick={() => setFiltros({ fechaInicio: '', fechaFin: '', operadora: '', conductor: '', estadoArchivado: '' })}
+            style={{
+              padding: '8px 16px',
+              background: '#6b7280',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Limpiar Filtros
+          </button>
+          <button
+            onClick={cargarViajesArchivados}
+            style={{
+              padding: '8px 16px',
+              background: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            🔄 Actualizar
+          </button>
+        </div>
+      </div>
+
+      {/* Tabla de viajes archivados */}
+      <div style={{ 
+        background: 'white', 
+        borderRadius: '8px', 
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+        overflow: 'hidden' 
+      }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
+          <h3 style={{ margin: 0, color: '#374151' }}>
+            Viajes Archivados ({viajesFiltrados.length})
+          </h3>
+        </div>
+        
+        {cargando ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+            Cargando viajes archivados...
+          </div>
+        ) : viajesFiltrados.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+            No hay viajes archivados que coincidan con los filtros.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Hora</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Cliente</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Conductor</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Unidad</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Operadora</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Estado</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Duración</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {viajesFiltrados.map((viaje, index) => (
+                  <tr key={viaje.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '12px', fontSize: '13px' }}>
+                      {viaje.fechaArchivado ? (
+                        viaje.fechaArchivado.toDate 
+                          ? viaje.fechaArchivado.toDate().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                          : new Date(viaje.fechaArchivado).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                      ) : '-'}
+                    </td>
+                    <td style={{ padding: '12px' }}>{viaje.nombreCliente || '-'}</td>
+                    <td style={{ padding: '12px' }}>{viaje.nombreConductor || '-'}</td>
+                    <td style={{ padding: '12px' }}>{viaje.unidad || viaje.numeroUnidad || '-'}</td>
+                    <td style={{ padding: '12px' }}>{viaje.operadora || '-'}</td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        background: viaje.estadoArchivado === 'Completado' ? '#dcfce7' : '#fee2e2',
+                        color: viaje.estadoArchivado === 'Completado' ? '#166534' : '#991b1b'
+                      }}>
+                        {viaje.estadoArchivado || '-'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      {viaje.duracionViaje ? Math.round(viaje.duracionViaje / 60) + ' min' : '-'}
+                    </td>
+                    <td style={{ padding: '12px', fontSize: '12px' }}>{viaje.motivoArchivado || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
