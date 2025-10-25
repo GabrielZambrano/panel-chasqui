@@ -3493,11 +3493,19 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         viajeCanceladoData
       );
 
+      // Guardar también en Viajes Archivados
+      await addDoc(collection(db, 'Viajes Archivados'), {
+        ...viajeCanceladoData,
+        estadoArchivado: 'Cancelado por Cliente',
+        fechaArchivado: fechaActual,
+        motivoArchivado: 'Cancelado por el cliente'
+      });
+
       // Eliminar el documento de pedidoEnCurso
       const pedidoRef = doc(db, modalAccionesPedido.coleccion, modalAccionesPedido.pedido.id);
       await deleteDoc(pedidoRef);
 
-      console.log(`✅ Pedido cancelado por cliente, guardado en HistorialDeViajes/${fechaFormateada}/viajes/${modalAccionesPedido.pedido.id}`);
+      console.log(`✅ Pedido cancelado por cliente, guardado en HistorialDeViajes/${fechaFormateada}/viajes/${modalAccionesPedido.pedido.id} y en Viajes Archivados`);
       
       // Actualizar contadores específicos
       await actualizarContadorReporte('viajesCancelados');
@@ -3538,11 +3546,19 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         viajeCanceladoData
       );
 
+      // Guardar también en Viajes Archivados
+      await addDoc(collection(db, 'Viajes Archivados'), {
+        ...viajeCanceladoData,
+        estadoArchivado: 'Cancelado por Unidad',
+        fechaArchivado: fechaActual,
+        motivoArchivado: 'Cancelado por la unidad/conductor'
+      });
+
       // Eliminar el documento de pedidoEnCurso
       const pedidoRef = doc(db, modalAccionesPedido.coleccion, modalAccionesPedido.pedido.id);
       await deleteDoc(pedidoRef);
 
-      console.log(`✅ Pedido cancelado por unidad, guardado en HistorialDeViajes/${fechaFormateada}/viajes/${modalAccionesPedido.pedido.id}`);
+      console.log(`✅ Pedido cancelado por unidad, guardado en HistorialDeViajes/${fechaFormateada}/viajes/${modalAccionesPedido.pedido.id} y en Viajes Archivados`);
       
       // Actualizar contadores específicos
       await actualizarContadorReporte('viajesCancelados');
@@ -4290,11 +4306,19 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         viajeFinalizadoData
       );
 
+      // Guardar también en Viajes Archivados
+      await addDoc(collection(db, 'Viajes Archivados'), {
+        ...viajeFinalizadoData,
+        estadoArchivado: 'Finalizado',
+        fechaArchivado: fechaActual,
+        motivoArchivado: 'Pedido completado exitosamente'
+      });
+
       // Eliminar el documento de pedidoEnCurso
       const pedidoRef = doc(db, modalAccionesPedido.coleccion, modalAccionesPedido.pedido.id);
       await deleteDoc(pedidoRef);
 
-      console.log(`✅ Pedido finalizado y guardado en HistorialDeViajes/${fechaFormateada}/viajes/${modalAccionesPedido.pedido.id}`);
+      console.log(`✅ Pedido finalizado y guardado en HistorialDeViajes/${fechaFormateada}/viajes/${modalAccionesPedido.pedido.id} y en Viajes Archivados`);
       
       setModal({ open: true, success: true, message: 'Pedido finalizado exitosamente.' });
       
