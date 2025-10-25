@@ -3,7 +3,7 @@ import { useAuth } from '../AuthContext';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
-function Header({ activeSection, operadorAutenticado, reporteDiario, resumenViajesOperadora, cambiarUsuario, onSolicitarAutenticacionOperadora }) {
+function Header({ activeSection, operadorAutenticado, reporteDiario, resumenViajesOperadora, tipoEmpresa, setTipoEmpresa, cambiarUsuario, onSolicitarAutenticacionOperadora }) {
   const { currentUser, logout } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
   const [loadingConfirm, setLoadingConfirm] = useState(false);
@@ -105,9 +105,9 @@ function Header({ activeSection, operadorAutenticado, reporteDiario, resumenViaj
             marginLeft: '20px',
             flexWrap: 'wrap'
           }}>
-            {/* Manuales (viajesRegistrados son los registrados manualmente) */}
+            {/* Manuales (viajesRegistrados son los registrados manualmente) - OCULTO */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px',
+              display: 'none', alignItems: 'center', gap: '4px', padding: '6px 10px',
               backgroundColor: '#3b82f6', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: 'white'
             }}>
               <span>�</span>
@@ -115,9 +115,9 @@ function Header({ activeSection, operadorAutenticado, reporteDiario, resumenViaj
               <span>Manuales</span>
             </div>
 
-            {/* Cancelados (total) */}
+            {/* Cancelados (total) - OCULTO */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px',
+              display: 'none', alignItems: 'center', gap: '4px', padding: '6px 10px',
               backgroundColor: '#ef4444', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: 'white'
             }}>
               <span>❌</span>
@@ -125,9 +125,9 @@ function Header({ activeSection, operadorAutenticado, reporteDiario, resumenViaj
               <span>Cancelados</span>
             </div>
 
-            {/* Automáticos (desde backend) */}
+            {/* Automáticos (desde backend) - OCULTO */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px',
+              display: 'none', alignItems: 'center', gap: '4px', padding: '6px 10px',
               backgroundColor: '#f59e0b', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: 'white'
             }}>
               <span>⚙️</span>

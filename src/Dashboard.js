@@ -26,6 +26,9 @@ function Dashboard() {
     total: 0
   });
 
+  // Estado para tipo de empresa (Efectivo/Transferencia)
+  const [tipoEmpresa, setTipoEmpresa] = useState('Efectivo');
+
   // Disparador para abrir el modal de autenticación en TaxiForm
   const [authTrigger, setAuthTrigger] = useState(0);
   const solicitarAutenticacionOperadora = () => setAuthTrigger((v) => v + 1);
@@ -207,6 +210,8 @@ function Dashboard() {
           operadorAutenticado={operadorAutenticado}
           reporteDiario={reporteDiario}
           resumenViajesOperadora={resumenViajesOperadora}
+          tipoEmpresa={tipoEmpresa}
+          setTipoEmpresa={setTipoEmpresa}
           onSolicitarAutenticacionOperadora={solicitarAutenticacionOperadora}
           cambiarUsuario={() => {
             setOperadorAutenticado(null);
@@ -235,6 +240,8 @@ function Dashboard() {
           setReporteDiario={setReporteDiario}
           authTrigger={authTrigger}
           setIsCollapsed={setIsCollapsed}
+          tipoEmpresa={tipoEmpresa}
+          setTipoEmpresa={setTipoEmpresa}
         />
       </div>
     </div>

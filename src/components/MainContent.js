@@ -5354,6 +5354,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
               }}
             >
               <option value="Efectivo">💵 Efectivo</option>
+              <option value="TRANSFERENCIA">💳 Transferencia</option>
             </select>
             
             <select 
@@ -5386,7 +5387,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         </div>
 
         {/* Indicador de tipo de empresa */}
-        {tipoEmpresa !== 'Efectivo' && (
+        {tipoEmpresa !== 'Efectivo' && tipoEmpresa !== 'TRANSFERENCIA' && (
           <div style={{
             padding: '10px 15px',
             marginBottom: '15px',
