@@ -13400,7 +13400,7 @@ function ViajesArchivadosContent() {
     }
   };
 
-  // Calcular estadísticas
+  // Calcular estadísticas basadas en los viajes filtrados
   const calcularEstadisticas = (viajes) => {
     const total = viajes.length;
     if (total === 0) {
@@ -13414,7 +13414,7 @@ function ViajesArchivadosContent() {
       return;
     }
     
-    const completados = viajes.filter(v => v.estadoArchivado === 'Completado').length;
+    const completados = viajes.filter(v => v.estadoArchivado === 'Completado' || v.pedido === 'Aceptado').length;
     const cancelados = viajes.filter(v => v.estadoArchivado === 'Cancelado').length;
     const tiempoLimite = viajes.filter(v => v.motivoArchivado?.includes('Tiempo límite')).length;
     const promedioDuracion = viajes.reduce((sum, v) => sum + (v.duracionViaje || 0), 0) / total;
@@ -13434,38 +13434,25 @@ function ViajesArchivadosContent() {
     console.log('📊 Total viajes antes de filtrar:', viajesArchivados.length);
     
     const filtrados = viajesArchivados.filter(viaje => {
-      // Filtro de fecha mejorado
+      // Filtro de fecha simplificado
       let cumpleFecha = true;
       if (filtros.fechaInicio && filtros.fechaFin) {
-        const fechaInicio = new Date(filtros.fechaInicio);
-        const fechaFin = new Date(filtros.fechaFin);
-        fechaFin.setHours(23, 59, 59, 999); // Incluir todo el día
+        const fechaInicio = new Date(filtros.fechaInicio + 'T00:00:00');
+        const fechaFin = new Date(filtros.fechaFin + 'T23:59:59');
         
-        // Usar el campo 'fecha' en lugar de 'fechaArchivado'
         const fechaCampo = viaje.fecha || viaje.fechaArchivado;
         if (fechaCampo) {
           let fechaViaje;
           if (fechaCampo.toDate) {
             fechaViaje = fechaCampo.toDate();
           } else if (fechaCampo.seconds) {
-            // Si es un timestamp de Firebase
             fechaViaje = new Date(fechaCampo.seconds * 1000);
           } else {
             fechaViaje = new Date(fechaCampo);
           }
           
-          console.log('📅 Comparando fechas:', {
-            viajeId: viaje.id,
-            fechaOriginal: fechaCampo,
-            fechaViaje: fechaViaje.toLocaleDateString(),
-            fechaInicio: fechaInicio.toLocaleDateString(),
-            fechaFin: fechaFin.toLocaleDateString(),
-            cumple: fechaViaje >= fechaInicio && fechaViaje <= fechaFin
-          });
-          
           cumpleFecha = fechaViaje >= fechaInicio && fechaViaje <= fechaFin;
         } else {
-          console.log('⚠️ Viaje sin fecha:', viaje.id);
           cumpleFecha = false;
         }
       }
@@ -13501,6 +13488,11 @@ function ViajesArchivadosContent() {
   }, []);
 
   const viajesFiltrados = aplicarFiltros();
+
+  // Recalcular estadísticas cuando cambien los viajes filtrados
+  useEffect(() => {
+    calcularEstadisticas(viajesFiltrados);
+  }, [viajesFiltrados]);
 
   return (
     <div style={{ padding: '20px' }}>
