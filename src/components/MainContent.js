@@ -13676,19 +13676,42 @@ function ViajesArchivadosContent() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f9fafb' }}>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Fecha</th>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Hora</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Teléfono</th>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Cliente</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Conductor</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Dirección</th>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Unidad</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Pedido</th>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Operadora</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Estado</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Duración</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Motivo</th>
                 </tr>
               </thead>
               <tbody>
                 {viajesFiltrados.map((viaje, index) => (
                   <tr key={viaje.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    {/* Fecha */}
+                    <td style={{ padding: '12px', fontSize: '13px' }}>
+                      {(() => {
+                        const fechaCampo = viaje.fecha || viaje.fechaArchivado;
+                        if (fechaCampo) {
+                          let fechaViaje;
+                          if (fechaCampo.toDate) {
+                            fechaViaje = fechaCampo.toDate();
+                          } else if (fechaCampo.seconds) {
+                            fechaViaje = new Date(fechaCampo.seconds * 1000);
+                          } else {
+                            fechaViaje = new Date(fechaCampo);
+                          }
+                          return fechaViaje.toLocaleDateString('es-EC', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric' 
+                          });
+                        }
+                        return '-';
+                      })()}
+                    </td>
+                    {/* Hora */}
                     <td style={{ padding: '12px', fontSize: '13px' }}>
                       {(() => {
                         const fechaCampo = viaje.fecha || viaje.fechaArchivado;
@@ -13706,26 +13729,31 @@ function ViajesArchivadosContent() {
                         return '-';
                       })()}
                     </td>
-                    <td style={{ padding: '12px' }}>{viaje.nombreCliente || '-'}</td>
-                    <td style={{ padding: '12px' }}>{viaje.nombreConductor || '-'}</td>
+                    {/* Teléfono */}
+                    <td style={{ padding: '12px', fontSize: '13px' }}>{viaje.telefonoCompleto || viaje.telefono || '-'}</td>
+                    {/* Cliente */}
+                    <td style={{ padding: '12px' }}>{viaje.nombreCliente || viaje.nombre || '-'}</td>
+                    {/* Dirección */}
+                    <td style={{ padding: '12px', fontSize: '12px', maxWidth: '200px', wordWrap: 'break-word' }}>
+                      {viaje.direccion || viaje.sector || '-'}
+                    </td>
+                    {/* Unidad */}
                     <td style={{ padding: '12px' }}>{viaje.unidad || viaje.numeroUnidad || '-'}</td>
-                    <td style={{ padding: '12px' }}>{viaje.operadora || '-'}</td>
+                    {/* Pedido */}
                     <td style={{ padding: '12px' }}>
                       <span style={{
                         padding: '4px 8px',
                         borderRadius: '4px',
                         fontSize: '12px',
                         fontWeight: '500',
-                        background: viaje.estadoArchivado === 'Completado' ? '#dcfce7' : '#fee2e2',
-                        color: viaje.estadoArchivado === 'Completado' ? '#166534' : '#991b1b'
+                        background: viaje.pedido === 'Aceptado' ? '#dcfce7' : '#fee2e2',
+                        color: viaje.pedido === 'Aceptado' ? '#166534' : '#991b1b'
                       }}>
-                        {viaje.estadoArchivado || '-'}
+                        {viaje.pedido || viaje.estadoArchivado || '-'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px' }}>
-                      {viaje.duracionViaje ? Math.round(viaje.duracionViaje / 60) + ' min' : '-'}
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '12px' }}>{viaje.motivoArchivado || '-'}</td>
+                    {/* Operadora */}
+                    <td style={{ padding: '12px' }}>{viaje.operadora || '-'}</td>
                   </tr>
                 ))}
               </tbody>
