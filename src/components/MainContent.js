@@ -13445,11 +13445,23 @@ function ViajesArchivadosContent() {
           let fechaViaje;
           if (viaje.fechaArchivado.toDate) {
             fechaViaje = viaje.fechaArchivado.toDate();
+          } else if (viaje.fechaArchivado.seconds) {
+            // Si es un timestamp de Firebase
+            fechaViaje = new Date(viaje.fechaArchivado.seconds * 1000);
           } else {
             fechaViaje = new Date(viaje.fechaArchivado);
           }
+          
+          console.log('📅 Comparando fechas:', {
+            fechaViaje: fechaViaje.toLocaleDateString(),
+            fechaInicio: fechaInicio.toLocaleDateString(),
+            fechaFin: fechaFin.toLocaleDateString(),
+            cumple: fechaViaje >= fechaInicio && fechaViaje <= fechaFin
+          });
+          
           cumpleFecha = fechaViaje >= fechaInicio && fechaViaje <= fechaFin;
         } else {
+          console.log('⚠️ Viaje sin fechaArchivado:', viaje.id);
           cumpleFecha = false;
         }
       }
@@ -13675,9 +13687,17 @@ function ViajesArchivadosContent() {
                   <tr key={viaje.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '12px', fontSize: '13px' }}>
                       {viaje.fechaArchivado ? (
-                        viaje.fechaArchivado.toDate 
-                          ? viaje.fechaArchivado.toDate().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
-                          : new Date(viaje.fechaArchivado).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                        (() => {
+                          let fechaViaje;
+                          if (viaje.fechaArchivado.toDate) {
+                            fechaViaje = viaje.fechaArchivado.toDate();
+                          } else if (viaje.fechaArchivado.seconds) {
+                            fechaViaje = new Date(viaje.fechaArchivado.seconds * 1000);
+                          } else {
+                            fechaViaje = new Date(viaje.fechaArchivado);
+                          }
+                          return fechaViaje.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true });
+                        })()
                       ) : '-'}
                     </td>
                     <td style={{ padding: '12px' }}>{viaje.nombreCliente || '-'}</td>
