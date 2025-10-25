@@ -13441,18 +13441,22 @@ function ViajesArchivadosContent() {
         const fechaFin = new Date(filtros.fechaFin);
         fechaFin.setHours(23, 59, 59, 999); // Incluir todo el día
         
-        if (viaje.fechaArchivado) {
+        // Usar el campo 'fecha' en lugar de 'fechaArchivado'
+        const fechaCampo = viaje.fecha || viaje.fechaArchivado;
+        if (fechaCampo) {
           let fechaViaje;
-          if (viaje.fechaArchivado.toDate) {
-            fechaViaje = viaje.fechaArchivado.toDate();
-          } else if (viaje.fechaArchivado.seconds) {
+          if (fechaCampo.toDate) {
+            fechaViaje = fechaCampo.toDate();
+          } else if (fechaCampo.seconds) {
             // Si es un timestamp de Firebase
-            fechaViaje = new Date(viaje.fechaArchivado.seconds * 1000);
+            fechaViaje = new Date(fechaCampo.seconds * 1000);
           } else {
-            fechaViaje = new Date(viaje.fechaArchivado);
+            fechaViaje = new Date(fechaCampo);
           }
           
           console.log('📅 Comparando fechas:', {
+            viajeId: viaje.id,
+            fechaOriginal: fechaCampo,
             fechaViaje: fechaViaje.toLocaleDateString(),
             fechaInicio: fechaInicio.toLocaleDateString(),
             fechaFin: fechaFin.toLocaleDateString(),
@@ -13461,7 +13465,7 @@ function ViajesArchivadosContent() {
           
           cumpleFecha = fechaViaje >= fechaInicio && fechaViaje <= fechaFin;
         } else {
-          console.log('⚠️ Viaje sin fechaArchivado:', viaje.id);
+          console.log('⚠️ Viaje sin fecha:', viaje.id);
           cumpleFecha = false;
         }
       }
@@ -13686,19 +13690,21 @@ function ViajesArchivadosContent() {
                 {viajesFiltrados.map((viaje, index) => (
                   <tr key={viaje.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '12px', fontSize: '13px' }}>
-                      {viaje.fechaArchivado ? (
-                        (() => {
+                      {(() => {
+                        const fechaCampo = viaje.fecha || viaje.fechaArchivado;
+                        if (fechaCampo) {
                           let fechaViaje;
-                          if (viaje.fechaArchivado.toDate) {
-                            fechaViaje = viaje.fechaArchivado.toDate();
-                          } else if (viaje.fechaArchivado.seconds) {
-                            fechaViaje = new Date(viaje.fechaArchivado.seconds * 1000);
+                          if (fechaCampo.toDate) {
+                            fechaViaje = fechaCampo.toDate();
+                          } else if (fechaCampo.seconds) {
+                            fechaViaje = new Date(fechaCampo.seconds * 1000);
                           } else {
-                            fechaViaje = new Date(viaje.fechaArchivado);
+                            fechaViaje = new Date(fechaCampo);
                           }
                           return fechaViaje.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true });
-                        })()
-                      ) : '-'}
+                        }
+                        return '-';
+                      })()}
                     </td>
                     <td style={{ padding: '12px' }}>{viaje.nombreCliente || '-'}</td>
                     <td style={{ padding: '12px' }}>{viaje.nombreConductor || '-'}</td>
