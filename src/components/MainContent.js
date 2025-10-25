@@ -13382,16 +13382,19 @@ function ViajesArchivadosContent() {
   const cargarViajesArchivados = async () => {
     setCargando(true);
     try {
-      const q = query(collection(db, 'viajesArchivados'));
+      console.log('🔄 Cargando viajes archivados...');
+      const q = query(collection(db, 'Viajes Archivados'));
       const snapshot = await getDocs(q);
       const viajes = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      console.log('📊 Viajes archivados cargados:', viajes.length);
+      console.log('📋 Primeros viajes:', viajes.slice(0, 3));
       setViajesArchivados(viajes);
       calcularEstadisticas(viajes);
     } catch (error) {
-      console.error('Error cargando viajes archivados:', error);
+      console.error('❌ Error cargando viajes archivados:', error);
     } finally {
       setCargando(false);
     }
@@ -13400,6 +13403,17 @@ function ViajesArchivadosContent() {
   // Calcular estadísticas
   const calcularEstadisticas = (viajes) => {
     const total = viajes.length;
+    if (total === 0) {
+      setEstadisticas({
+        totalViajes: 0,
+        completados: 0,
+        cancelados: 0,
+        tiempoLimite: 0,
+        promedioDuracion: 0
+      });
+      return;
+    }
+    
     const completados = viajes.filter(v => v.estadoArchivado === 'Completado').length;
     const cancelados = viajes.filter(v => v.estadoArchivado === 'Cancelado').length;
     const tiempoLimite = viajes.filter(v => v.motivoArchivado?.includes('Tiempo límite')).length;
@@ -13416,7 +13430,10 @@ function ViajesArchivadosContent() {
 
   // Aplicar filtros
   const aplicarFiltros = () => {
-    return viajesArchivados.filter(viaje => {
+    console.log('🔍 Aplicando filtros:', filtros);
+    console.log('📊 Total viajes antes de filtrar:', viajesArchivados.length);
+    
+    const filtrados = viajesArchivados.filter(viaje => {
       // Filtro de fecha mejorado
       let cumpleFecha = true;
       if (filtros.fechaInicio && filtros.fechaFin) {
@@ -13448,6 +13465,9 @@ function ViajesArchivadosContent() {
 
       return cumpleFecha && cumpleOperadora && cumpleConductor && cumpleEstado;
     });
+    
+    console.log('✅ Viajes después de filtrar:', filtrados.length);
+    return filtrados;
   };
 
   useEffect(() => {
