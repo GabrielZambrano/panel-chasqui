@@ -1039,13 +1039,13 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         };
       });
       
-      // Ordenar por fecha de creación, más antiguo abajo
+      // Ordenar por fecha de creación, más reciente arriba
       pedidos.sort((a, b) => {
         if (a.fecha && b.fecha) {
           const fechaA = convertirADate(a.fecha);
           const fechaB = convertirADate(b.fecha);
           if (!fechaA || !fechaB) return 0;
-          return fechaA - fechaB;
+          return fechaB - fechaA;
         }
         return 0;
       });
@@ -1166,13 +1166,13 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         };
       });
       
-      // Ordenar por fecha de creación, más antiguo abajo
+      // Ordenar por fecha de creación, más reciente arriba
       pedidos.sort((a, b) => {
         if (a.fecha && b.fecha) {
           const fechaA = convertirADate(a.fecha);
           const fechaB = convertirADate(b.fecha);
           if (!fechaA || !fechaB) return 0;
-          return fechaA - fechaB;
+          return fechaB - fechaA;
         }
         return 0;
       });
