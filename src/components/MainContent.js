@@ -782,11 +782,6 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
     cargarEstadoConfiguracion();
   }, []);
 
-  // Cargar unidades de bases al inicio
-  useEffect(() => {
-    cargarUnidadesBases();
-  }, []);
-
   // Guardar modoSeleccion en localStorage cuando cambie
   useEffect(() => {
     localStorage.setItem('modoSeleccion', modoSeleccion);
@@ -842,10 +837,34 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
   }, [modoSeleccion, telefono, nombre, direccion, usuarioEncontrado, coordenadas, operadorAutenticado]); // Dependencias para valores recientes en F7
 
   // Guardar reserva en Firestore
+  // Helper: convertir cualquier tipo de fecha a Date
+  const convertirADate = (fecha) => {
+    try {
+      if (!fecha) return null;
+      // Si es un Timestamp de Firebase
+      if (fecha.toDate && typeof fecha.toDate === 'function') {
+        return fecha.toDate();
+      }
+      // Si tiene la propiedad seconds (Timestamp serializado)
+      if (fecha.seconds) {
+        return new Date(fecha.seconds * 1000);
+      }
+      // Si ya es un Date
+      if (fecha instanceof Date) {
+        return fecha;
+      }
+      // Intentar parsear como string
+      return new Date(fecha);
+    } catch {
+      return null;
+    }
+  };
+
   // Helper: formatear fecha/hora local dd/MM/yyyy HH:mm
   const formatearFechaHora = (fecha) => {
     try {
-      const d = new Date(fecha);
+      const d = convertirADate(fecha);
+      if (!d) return '';
       const pad = (n) => String(n).padStart(2, '0');
       const day = pad(d.getDate());
       const month = pad(d.getMonth() + 1);
@@ -1020,12 +1039,13 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         };
       });
       
-      // Ordenar por fecha de creación más reciente primero
+      // Ordenar por fecha de creación, más antiguo abajo
       pedidos.sort((a, b) => {
         if (a.fecha && b.fecha) {
-          const fechaA = new Date(a.fecha);
-          const fechaB = new Date(b.fecha);
-          return fechaB - fechaA;
+          const fechaA = convertirADate(a.fecha);
+          const fechaB = convertirADate(b.fecha);
+          if (!fechaA || !fechaB) return 0;
+          return fechaA - fechaB;
         }
         return 0;
       });
@@ -1066,6 +1086,28 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
       setCargandoPedidosCurso(false);
     });
 
+    // Listener para bases (en tiempo real)
+    const qBases = query(
+      collection(db, 'bases'),
+      orderBy('fechaHora', 'asc') // Más antiguas primero
+    );
+    const unsubscribeBases = onSnapshot(qBases, (querySnapshot) => {
+      console.log('🔄 Listener de bases ejecutado');
+      console.log('📊 Número de unidades:', querySnapshot.docs.length);
+      
+      const unidades = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      console.log('✅ Unidades de bases cargadas:', unidades.length);
+      setUnidadesBases(unidades);
+      setCargandoBases(false);
+    }, (error) => {
+      console.error('❌ Error en listener de bases:', error);
+      setCargandoBases(false);
+    });
+
     // Cleanup function para desuscribirse cuando el componente se desmonte
     return () => {
       if (typeof unsubscribeDisponibles === 'function') {
@@ -1073,6 +1115,9 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
       }
       if (typeof unsubscribeEnCurso === 'function') {
       unsubscribeEnCurso();
+      }
+      if (typeof unsubscribeBases === 'function') {
+      unsubscribeBases();
       }
     };
   }, []);
@@ -1121,12 +1166,13 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
         };
       });
       
-      // Ordenar por fecha de creación más reciente primero
+      // Ordenar por fecha de creación, más antiguo abajo
       pedidos.sort((a, b) => {
         if (a.fecha && b.fecha) {
-          const fechaA = new Date(a.fecha);
-          const fechaB = new Date(b.fecha);
-          return fechaB - fechaA;
+          const fechaA = convertirADate(a.fecha);
+          const fechaB = convertirADate(b.fecha);
+          if (!fechaA || !fechaB) return 0;
+          return fechaA - fechaB;
         }
         return 0;
       });
@@ -1140,36 +1186,12 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
     }
   };
 
-  // Función para cargar unidades de la colección bases
-  const cargarUnidadesBases = async () => {
-    try {
-      setCargandoBases(true);
-      console.log('🔄 Cargando unidades de bases...');
-      
-      const basesRef = collection(db, 'bases');
-      const q = query(basesRef, orderBy('fechaHora', 'asc')); // Más antiguas primero
-      const querySnapshot = await getDocs(q);
-      
-      const unidades = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      console.log('📊 Unidades de bases cargadas:', unidades.length);
-      setUnidadesBases(unidades);
-    } catch (error) {
-      console.error('❌ Error al cargar unidades de bases:', error);
-    } finally {
-      setCargandoBases(false);
-    }
-  };
-
   // Función para eliminar unidad de bases
   const eliminarUnidadBase = async (unidadId) => {
     try {
       await deleteDoc(doc(db, 'bases', unidadId));
       console.log('✅ Unidad eliminada de bases:', unidadId);
-      cargarUnidadesBases(); // Recargar la lista
+      // La lista se actualizará automáticamente por el listener en tiempo real
     } catch (error) {
       console.error('❌ Error al eliminar unidad:', error);
     }
@@ -3037,6 +3059,25 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
        // Registro silencioso - sin mostrar alert de éxito
        console.log(`✅ Pedido registrado silenciosamente en "En Curso" - Conductor: ${conductorData.nombre}, Unidad: ${unidad}`);
        
+       // Eliminar unidad de bases si estaba registrada (solo para formulario directo)
+       try {
+         const basesQuery = query(
+           collection(db, 'bases'),
+           where('numeroUnidad', '==', unidad.trim())
+         );
+         const basesSnapshot = await getDocs(basesQuery);
+         
+         if (!basesSnapshot.empty) {
+           // Eliminar todas las unidades encontradas (en teoría debería ser solo una)
+           const eliminaciones = basesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+           await Promise.all(eliminaciones);
+           console.log(`✅ Unidad ${unidad} eliminada de bases después de asignación`);
+         }
+       } catch (error) {
+         console.error('❌ Error al eliminar unidad de bases:', error);
+         // No fallar si no se puede eliminar de bases
+       }
+       
        // Actualizar contador de viajes registrados
        await actualizarContadorReporte('viajesRegistrados');
        // Actualizar contador de viajes manuales (porque se registró manualmente)
@@ -4528,6 +4569,25 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
          // No fallar si no se puede registrar en la colección separada
        }
 
+       // Eliminar unidad de bases si estaba registrada (cuando se asigna desde pedidosDisponibles1)
+       try {
+         const basesQuery = query(
+           collection(db, 'bases'),
+           where('numeroUnidad', '==', unidadEdit.trim())
+         );
+         const basesSnapshot = await getDocs(basesQuery);
+         
+         if (!basesSnapshot.empty) {
+           // Eliminar todas las unidades encontradas (en teoría debería ser solo una)
+           const eliminaciones = basesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+           await Promise.all(eliminaciones);
+           console.log(`✅ Unidad ${unidadEdit} eliminada de bases después de asignación`);
+         }
+       } catch (error) {
+         console.error('❌ Error al eliminar unidad de bases:', error);
+         // No fallar si no se puede eliminar de bases
+       }
+       
        // Cancelar edición - los listeners en tiempo real actualizarán automáticamente las tablas
        cancelarEdicionViaje();
        
@@ -6415,7 +6475,7 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                       
                       console.log('✅ Unidad registrada exitosamente en colección bases');
                       e.target.value = ''; // Limpiar el input después de insertar
-                      cargarUnidadesBases(); // Recargar la lista de unidades
+                      // La lista se actualizará automáticamente por el listener en tiempo real
                       
                     } catch (error) {
                       console.error('❌ Error al registrar unidad en bases:', error);
@@ -6708,7 +6768,10 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                        {viaje.fecha ? (
                          typeof viaje.fecha === 'string' 
                            ? viaje.fecha.split(',')[1]?.trim().split(':')[0] + ':' + viaje.fecha.split(',')[1]?.trim().split(':')[1] + ' ' + viaje.fecha.split(' ').pop()
-                           : new Date(viaje.fecha).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                           : (() => {
+                               const fechaConvertida = convertirADate(viaje.fecha);
+                               return fechaConvertida ? fechaConvertida.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-';
+                             })()
                        ) : '-'}
                      </td>
                      <td style={{
@@ -7349,9 +7412,10 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
                       {pedido.fecha ? (
                         typeof pedido.fecha === 'string' 
                           ? pedido.fecha.split(',')[1]?.trim().split(':')[0] + ':' + pedido.fecha.split(',')[1]?.trim().split(':')[1] + ' ' + pedido.fecha.split(' ').pop()
-                          : pedido.fecha.toDate 
-                            ? pedido.fecha.toDate().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
-                            : new Date(pedido.fecha).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true })
+                          : (() => {
+                              const fechaConvertida = convertirADate(pedido.fecha);
+                              return fechaConvertida ? fechaConvertida.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-';
+                            })()
                       ) : '-'}
                     </td>
                     <td style={{
