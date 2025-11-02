@@ -1045,12 +1045,14 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
           const fechaA = convertirADate(a.fecha);
           const fechaB = convertirADate(b.fecha);
           if (!fechaA || !fechaB) return 0;
+          console.log('🔄 Comparando fechas:', fechaA, 'vs', fechaB, 'orden:', fechaB - fechaA);
           return fechaB - fechaA;
         }
         return 0;
       });
       
       console.log('✅ Pedidos procesados para mostrar:', pedidos.length);
+      console.log('📊 Primeros 3 pedidos ordenados:', pedidos.slice(0, 3).map(p => ({ id: p.id, fecha: p.fecha, hora: convertirADate(p.fecha)?.toLocaleTimeString('es-EC') })));
       setpedidosDisponibles1(pedidos);
       setCargandoViajes(false);
     }, (error) => {
