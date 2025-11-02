@@ -2693,16 +2693,8 @@ function TaxiForm({ operadorAutenticado, setOperadorAutenticado, reporteDiario, 
      
      try {
 
-       const fecha = new Date().toLocaleString('es-EC', {
-         year: 'numeric',
-         month: 'numeric',
-         day: 'numeric',
-         hour: 'numeric',
-         minute: '2-digit',
-         second: '2-digit',
-         hour12: true
-       }); // Fecha como cadena en formato "10/9/2025, 5:14:46 a. m."
-       const clave = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const fecha = new Date(); // Timestamp de Firebase
+      const clave = Math.random().toString(36).substring(2, 8).toUpperCase();
        
       // Coordenadas FIJAS para pedidosDisponibles1 - SIEMPRE usar estas coordenadas
       const latitud = '-0.2298500';
